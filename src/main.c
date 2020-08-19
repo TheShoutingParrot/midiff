@@ -53,11 +53,20 @@ int main(int argv, char *argc[]) {
 	if(str == NULL || str == NULL || file == NULL || file2 == NULL)
 		return EXIT_FAILURE;
 
-	getNextString(file, str);
-	getNextString(file2, str2);
+	i = 0;
 
-	puts(str);
-	puts(str2);
+	for(;;) {
+		if(getNextString(file, str))
+			return EXIT_SUCCESS;
+		if(getNextString(file2, str2))
+			return EXIT_SUCCESS;
+
+		printf("%d\n", strcmp(str, str2));
+		if(!strcmp(str, str2))
+			printf("%06ld>\n%s\n%s\n", i, str, str2);
+
+		i++;
+	}
 
 	fclose(file);
 
@@ -73,8 +82,10 @@ bool getNextString(FILE *file, char *newString) {
 	for(;;) {
 		ch = fgetc(file);
 
-		if(ch == EOF)
+		if(ch == EOF) {
+			printf("eof found %s\n", newString);
 			return true;
+		}
 		if(ch == '\n')
 			break;
 
@@ -83,14 +94,11 @@ bool getNextString(FILE *file, char *newString) {
 
 	*(newString+i) = '\0';
 
-	if(!realloc(newString, strlen(newString)))
-		exit(EXIT_FAILURE);
-
 	return false;
 }
 
-bool doStringsMatch(char *str1, char *str2) {
-	return !strcmp(str1, str2);
+void usage(void) {
+	fputs("usage: midiff [-v] file1 file2", stderr);
 }
 
 void die(const char *fmt, ...) {
