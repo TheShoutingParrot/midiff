@@ -74,7 +74,7 @@ size_t lenList(struct list *listEntry) {
         return i;
 }
 
-#ifdef _DEBUG
+#ifdef DEBUG
 void printList(struct list *listHead) {
         struct list *listEntry;
         size_t i;
@@ -90,11 +90,10 @@ void printList(struct list *listHead) {
                 i++;
         }
 }
-#endif /* #ifdef _DEBUG */
+#endif /* #ifdef DEBUG */
 
 void deleteList(struct list *listHead) {
         struct list *listEntry, *temp;
-        size_t i;
 
         if(listHead == NULL)
                 return;

@@ -1,5 +1,5 @@
 workspace "midiff"
-        configurations { "Debug" }
+        configurations { "Debug", "Release" }
 
         kind "ConsoleApp"
         language "C"
@@ -13,5 +13,8 @@ project "midiff"
 
         filter "configurations:Debug"
                 defines { "DEBUG" }
-		buildoptions { "-g" }
+		buildoptions { "-g", "-Wall", "-Wunused" }
                 symbols "On"
+	
+	filter "configurations:Release"
+		symbols "On"

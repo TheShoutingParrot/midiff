@@ -93,8 +93,6 @@ bool compareLines(FILE *file1, FILE *file2, size_t *lines,
                         break;
                 }
 
-		printf("%d > %d: %d\n", j, gMaxLines, j >= gMaxLines);
-
                 if(j >= gMaxLines)
                         break;
         }
