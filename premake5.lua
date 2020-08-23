@@ -13,4 +13,5 @@ project "midiff"
 
         filter "configurations:Debug"
                 defines { "DEBUG" }
+		buildoptions { "-g" }
                 symbols "On"

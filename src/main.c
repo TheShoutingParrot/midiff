@@ -7,15 +7,28 @@
 
 #define VERSION		"0.1.0"
 
+struct contextList {
+	char *str;
+	struct contextList *next;
+};
+
 bool getNextString(FILE *file, char *newString);
-bool compareLines(FILE *file1, FILE *file2, size_t *lines, char *str1, char *str2);
-void printDifferences(char *diffStr1, char *diffStr2, size_t fromLine, size_t toLine);
+bool compareLines(FILE *file1, FILE *file2, size_t *lines, char *str1, char *str2, struct contextList **listHead);
+void printDifferences(char *diffStr1, char *diffStr2,
+		size_t fromLine, size_t toLine, struct contextList *contextListHead);
+
+struct contextList *addToContextList(char *str, struct contextList *listHead);
+size_t lenContextList(struct contextList *listEntry);
+void printContextList(struct contextList *listHead);
+void deleteContextList(struct contextList *listHead);
 
 void usage(void);
 void die(const char *fmt, ...);
 
 bool gIsLastLine;
-size_t unmatchingLines;
+size_t gUnmatchingLines,
+       gContextLines;
+
 
 int main(int argv, char *argc[]) {
 	size_t i, j;
@@ -24,49 +37,64 @@ int main(int argv, char *argc[]) {
 	filename1 = NULL;
 	filename2 = NULL;
 
+	gContextLines = 0;
+
 	/* parses through the command line arguments */
 	for(i = 1; i < argv; i++) {
 		/* all options start with - */
 		if(*argc[i] == '-') {
-			/* -v prints out version and quits*/
-			if(!strcmp(argc[i], "-v")) {
-				printf("%s\n", VERSION);
-				return EXIT_SUCCESS;
-			}
+			if(!strcmp(argc[i], "-h"))
+				usage();
+			if(!strcmp(argc[i], "-c"))
+				gContextLines = atoi(argc[++i]);
 		}
 
-		/* if an argument doesn't start with - then it's one of the two
+		/* if an argument doesn't start with "-" then it's one of the two
 		 * filenames */
 		else {
-			if(filename1 == NULL)
+			if(filename1 == NULL) {
 				filename1 = argc[i];
-			else if(filename2 == NULL)
+				if(filename1 == NULL)
+					die("memory allocation failed");
+			}
+
+			else if(filename2 == NULL) {
 				filename2 = argc[i];
+				if(filename2 == NULL)
+					die("memory allocation failed");
+			}
+
 			else
 				die("can't compare more than two files");
 		}
 	}
 
+	printf("\t%d\n", gContextLines);
+
 	/* if the filenames weren't provided (meaning that the filename
 	 * variables are still NULL) then prints out help and exits */
-	if(filename1 == NULL || filename2 == NULL) {
+	if(filename1 == NULL || filename2 == NULL)
 		usage();
-	}
 
-	FILE *file, *file2;
-	char *str, *str2;
+	FILE *file1, *file2;
+	char *str1, *str2;
+	struct contextList *contextListHead;
 
-	file = fopen(filename1, "r");
+	file1 = fopen(filename1, "r");
 	file2 = fopen(filename2, "r");
-	str = (char *)malloc(4096);
+	str1 = (char *)malloc(4096);
 	str2 = (char *)malloc(4096);
 
-	*str = '\0';
+	contextListHead = NULL;
+
+	*str1 = '\0';
 	*str2 = '\0';
 
+	gUnmatchingLines = 0;
+
 	/* checks if any of the pointers are null */
-	if(str == NULL || str == NULL || file == NULL || file2 == NULL)
-		return EXIT_FAILURE;
+	if(str1 == NULL || str2 == NULL || file1 == NULL || file2 == NULL)
+		die("memory allocation failed");
 
 	i = 0;
 
@@ -77,23 +105,33 @@ int main(int argv, char *argc[]) {
 			break;
 		j = i;
 		/* compares lines and prints out differences if there are any*/
-		if(compareLines(file, file2, &i, str, str2)) {
-			printDifferences(str, str2, j + 1, i);
+		if(compareLines(file1, file2, &i, str1, str2, &contextListHead)) {
+			printDifferences(str1, str2, j + 1, i, contextListHead);
+			deleteContextList(contextListHead);
+
+			contextListHead = NULL;
 		}
 
 		/* places the "\0" / EOF character in the start of the strings so that they
 		 * can be used again (basically deletes the previous contents of the string) */
-		*str = '\0';
+		*str1 = '\0';
 		*str2 = '\0';
 	}
 
-	fclose(file);
+	printf("File has been succesfully compared %d / %d lines we're different\n", 
+			gUnmatchingLines, i);
+
+	fclose(file1);
 	fclose(file2);
+
+	deleteContextList(contextListHead);
+
+	contextListHead = NULL;
 
 	return EXIT_SUCCESS;
 }
 
-/* this function reads the file "file" and fills the contents of newString
+/* This function reads the file "file" and fills the contents of newString
  * with the contents of the file "file" until a newline character is found
  * or a EOF character is encountered. If a EOF character is encountered
  * the program returns the value "true" / 1 otherwise returns "false" / 0 */
@@ -103,17 +141,11 @@ bool getNextString(FILE *file, char *newString) {
 
 	i = 0;
 
-//	printf("%p: \n", file);
-
 	for(;;) {
 		ch = fgetc(file);
 
-		if(ch == EOF) {
-			puts("EOF found");
+		if(ch == EOF)
 			return true;
-		}
-
-//		putchar(ch);
 
 		*(newString+i++) = ch;
 
@@ -121,65 +153,90 @@ bool getNextString(FILE *file, char *newString) {
 			break;
 	}
 
+	/* Last character of a string must be EOF or '\0' */
 	*(newString+i) = '\0';
 
 	return false;
 }
 
-bool compareLines(FILE *file1, FILE *file2, size_t *lines, char *str1, char *str2) {
+/* Compare two lines and if the lines compared are different then go to the
+ * next line and check if that's different and so on. */
+bool compareLines(FILE *file1, FILE *file2, size_t *lines, 
+		char *str1, char *str2,
+		struct contextList **listHead) {
 	size_t i;
-	bool comparation;
+	bool comparison;
 	char *newStr1,
 	     *newStr2;
 
 	newStr1 = (char *)malloc(4096);
 	newStr2 = (char *)malloc(4096);
 
+	comparison = false;
+
 	gIsLastLine = false;
 
 	i = 0;
 
+	size_t a;
+
 	for(;;) {
-		if(getNextString(file1, newStr1) || getNextString(file2, newStr2)) {
-			gIsLastLine = true;
-			puts("NO");
-			printf("%d\n", gIsLastLine);
-		}
+		/* Checks if the line contained an EOF (end of file) */
+		gIsLastLine = getNextString(file1, newStr1) || getNextString(file2, newStr2);
 
 		(*lines)++;
 		i++;
 
+		/* Compares lines */
 		if(strcmp(newStr1, newStr2)) {
-			comparation = true;
+			comparison = true;
+
+			gUnmatchingLines++;
 
 			strcat(str1, newStr1);
 			strcat(str2, newStr2);
 		}
+		else {
+			if(gContextLines != 0 && !comparison) {
+				*listHead = addToContextList(newStr1, *listHead);
+			}
 
-		else
 			break;
+		}
 
-		if(gIsLastLine || i > 10)
+		if(gIsLastLine || i > 40)
 			break;
 	}
 
-	free(newStr1);
-	free(newStr2);
-
-	return comparation;
+	return comparison;
 }
 
-void printDifferences(char *diffStr1, char *diffStr2, size_t fromLine, size_t toLine) {
+void printDifferences(char *diffStr1, char *diffStr2, size_t fromLine, size_t toLine,
+		struct contextList *contextListHead) {
 	size_t i;
 
 	if(toLine == fromLine)
 		printf("differences found from line %ld\n", fromLine); 
 	else
-		printf("differences found from line %ld to %ld\n", fromLine, toLine);
+		printf("differences found from line %ld to %ld\n", (fromLine), toLine);
 
-	printf("\n< ");
+	if(gContextLines != 0 && contextListHead != NULL) {
+		struct contextList *listEntry;
+
+		listEntry = contextListHead;
+
+		putchar('\n');
+
+		for(i = 0; i < lenContextList(contextListHead); i++) {
+			printf("C %s", listEntry->str);
+
+			listEntry = listEntry->next;
+		}
+	}
 
 	i = 0;
+
+	printf("\n< ");
 
 	while(*(diffStr1+i) != EOF && *(diffStr1+i) != 0) {
 		putchar(*(diffStr1+i));
@@ -188,9 +245,11 @@ void printDifferences(char *diffStr1, char *diffStr2, size_t fromLine, size_t to
 			printf("< ");
 	}
 
-	printf("\n> ");
-
 	i = 0;
+
+	printf("\n");
+
+	printf("> ");
 
 	while(*(diffStr2+i) != EOF && *(diffStr2+i) != 0) {
 		putchar(*(diffStr2+i));
@@ -202,8 +261,99 @@ void printDifferences(char *diffStr1, char *diffStr2, size_t fromLine, size_t to
 	printf("\n\n");
 }
 
+struct contextList *addToContextList(char *str, struct contextList *listHead) {
+	struct contextList *listEntry;
+
+	if(lenContextList(listHead) >= gContextLines) {
+		printf("lenContextList %d >= %d\n", lenContextList(listHead), gContextLines);
+		
+		listEntry = listHead->next;
+
+		free(listHead);
+		free(listHead->str);
+
+		listHead = listEntry;
+	}
+
+	if(listHead == NULL) {
+		listHead = (struct contextList *)malloc(sizeof(*listHead));
+
+		listEntry = listHead;
+	}
+
+	else {
+		listEntry = listHead;
+
+		while(listEntry->next != NULL) {
+			listEntry = listEntry->next;
+		}
+
+		listEntry->next = (struct contextList *)malloc(sizeof(*listHead)); 
+		listEntry = listEntry->next;
+	}
+
+	listEntry->str = str;
+	listEntry->next = NULL;
+
+	return listHead;
+}
+
+size_t lenContextList(struct contextList *listEntry) {
+	size_t i;
+
+	i = 0;
+
+	while(listEntry != NULL) {
+		listEntry = listEntry->next;
+		i++;
+	}
+
+	return i;
+}
+
+void printContextList(struct contextList *listHead) {
+	struct contextList *listEntry;
+	size_t i;
+
+	listEntry = listHead;
+
+	i = 0;
+
+	while(listEntry != NULL) {
+		printf("listEntry %02X: address: %p str: %s\n", i, listEntry, listEntry->str);
+		listEntry = listEntry->next;
+		i++;
+	}
+}
+
+void deleteContextList(struct contextList *listHead) {
+	struct contextList *listEntry, *temp;
+	size_t i;
+
+	if(listHead == NULL)
+		return;
+
+	while(listHead->next != NULL) {
+		listEntry = listHead;
+
+		while(listEntry->next != NULL) {
+			temp = listEntry;
+			listEntry = listEntry->next;
+		}
+
+		temp->next = NULL;
+
+		free(listEntry->str);
+		free(listEntry);
+	}
+
+	free(listHead);
+}
+
 void usage(void) {
-	fputs("usage: midiff [-v] file1 file2\n", stderr);
+	fputs("usage: midiff [-c context_lines] file1 file2\n", stderr);
+
+	exit(EXIT_SUCCESS);
 }
 
 void die(const char *fmt, ...) {
