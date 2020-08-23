@@ -1,7 +1,7 @@
 #include "midiff.h"
 
 int main(int argv, char *argc[]) {
-	size_t i, j;
+	size_t i;
 	char *filename1, *filename2;
 
 	filename1 = NULL;
@@ -72,7 +72,7 @@ int main(int argv, char *argc[]) {
 		/* exits main loop if the previous line had the EOF character */
 		if(gIsLastLine)
 			break;
-		j = i;
+		size_t j = i;
 
 		/* compares lines and prints out differences if there are any and finalle
 		 * frees/deletes the linked lists */
@@ -89,7 +89,7 @@ int main(int argv, char *argc[]) {
 		}
 	}
 
-	printf("File has been succesfully compared %d / %d lines we're different\n", 
+	printf("File has been succesfully compared %lu / %lu lines we're different\n", 
 			gUnmatchingLines, i);
 
 	fclose(file1);

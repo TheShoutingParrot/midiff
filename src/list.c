@@ -74,6 +74,7 @@ size_t lenList(struct list *listEntry) {
         return i;
 }
 
+#ifdef _DEBUG
 void printList(struct list *listHead) {
         struct list *listEntry;
         size_t i;
@@ -83,12 +84,13 @@ void printList(struct list *listHead) {
         i = 0;
 
         while(listEntry != NULL) {
-                printf("listEntry %02X: address: %p str: %p %s\n", i, 
+                printf("listEntry %02lX: address: %p str: %p %s\n", i, 
 				listEntry, listEntry->str, listEntry->str);
                 listEntry = listEntry->next;
                 i++;
         }
 }
+#endif /* #ifdef _DEBUG */
 
 void deleteList(struct list *listHead) {
         struct list *listEntry, *temp;

@@ -5,16 +5,19 @@
  * or a EOF character is encountered. If a EOF character is encountered
  * the program returns the value "true" / 1 otherwise returns "false" / 0 */
 bool getNextString(FILE *file, char *newString) {
-        char ch;
         size_t i;
 
         i = 0;
 
         for(;;) {
-                ch = fgetc(file);
+                char ch = fgetc(file);
 
-                if(ch == EOF)
+                if(ch == EOF) {
+			if(ferror(file))
+				die("I/O error encountered when reading");
+
                         return true;
+		}
 
                 *(newString+i++) = ch;
 
@@ -98,9 +101,9 @@ void printDifferences(struct list *diff1, struct list *diff2, size_t fromLine, s
         size_t i;
 
         if(toLine == fromLine)
-                printf("differences found from line %ld:\n", fromLine);
+                printf("differences found from line %lu:\n", fromLine);
         else
-                printf("differences found from line %ld to %ld:\n", (fromLine), toLine);
+                printf("differences found from line %lu to %lu:\n", (fromLine), toLine);
 
         if(gContextLines != 0 && contextListHead != NULL) {
                 listEntry = contextListHead;
