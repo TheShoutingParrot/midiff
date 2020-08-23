@@ -19,10 +19,10 @@ bool getNextString(FILE *file, char *newString) {
                         return true;
 		}
 
-                *(newString+i++) = ch;
-
                 if(ch == '\n')
                         break;
+
+                *(newString+i++) = ch;
         }
 
         /* Last character of a string must be EOF */
@@ -109,7 +109,7 @@ void printDifferences(struct list *diff1, struct list *diff2, size_t fromLine, s
                 listEntry = contextListHead;
 
                 for(i = 0; i < lenList(contextListHead); i++) {
-                        printf("C %s", listEntry->str);
+                        printf("C %s\n", listEntry->str);
 
                         listEntry = listEntry->next;
                 }
@@ -120,7 +120,7 @@ void printDifferences(struct list *diff1, struct list *diff2, size_t fromLine, s
         listEntry = diff1;
 
         for(i = 0; i < lenList(diff1); i++) {
-                printf("< %s", listEntry->str);
+                printf("< %s\n", listEntry->str);
 
                 listEntry = listEntry->next;
         }
@@ -132,7 +132,7 @@ void printDifferences(struct list *diff1, struct list *diff2, size_t fromLine, s
         listEntry = diff2;
 
         for(i = 0; i < lenList(diff2); i++) {
-                printf("> %s", listEntry->str);
+                printf("> %s\n", listEntry->str);
 
                 listEntry = listEntry->next;
         }
