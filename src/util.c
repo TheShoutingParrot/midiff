@@ -1,7 +1,7 @@
 #include "midiff.h"
 
 void usage(void) {
-        fputs("usage: midiff [-c context_lines] file1 file2\n", stderr);
+        fputs("usage: midiff [-c context_lines] [-m max_lines] file1 file2\n", stderr);
 
         exit(EXIT_SUCCESS);
 }

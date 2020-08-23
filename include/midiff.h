@@ -19,7 +19,8 @@ struct list {
 
 bool gIsLastLine;
 size_t gUnmatchingLines,
-       gContextLines;
+       gContextLines,
+       gMaxLines;
 
 /* compare.c functions */
 bool getNextString(FILE *file, char *newString);

@@ -37,7 +37,7 @@ bool compareLines(FILE *file1, FILE *file2, size_t *lines,
                 struct list **diff1, struct list **diff2,
                 struct list **context,
                 char **limbo) {
-        size_t i, a;
+        size_t i, j;
         bool comparison;
         char *newStr1,
              *newStr2;
@@ -47,6 +47,7 @@ bool compareLines(FILE *file1, FILE *file2, size_t *lines,
         gIsLastLine = false;
 
         i = 0;
+	j = 0;
 
         if(*limbo != NULL) {
                 *context = addToList(*limbo, *context);
@@ -66,11 +67,15 @@ bool compareLines(FILE *file1, FILE *file2, size_t *lines,
                 (*lines)++;
                 i++;
 
+		if(gIsLastLine)
+			break;
+
                 /* Compares lines */
                 if(strcmp(newStr1, newStr2)) {
                         comparison = true;
 
                         gUnmatchingLines++;
+			j++;
 
                         *diff1 = addToList(newStr1, *diff1);
                         *diff2 = addToList(newStr2, *diff2);
@@ -88,7 +93,9 @@ bool compareLines(FILE *file1, FILE *file2, size_t *lines,
                         break;
                 }
 
-                if(gIsLastLine || i > 100)
+		printf("%d > %d: %d\n", j, gMaxLines, j >= gMaxLines);
+
+                if(j >= gMaxLines)
                         break;
         }
 

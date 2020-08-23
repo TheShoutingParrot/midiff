@@ -8,6 +8,7 @@ int main(int argv, char *argc[]) {
 	filename2 = NULL;
 
 	gContextLines = 0;
+	gMaxLines = 20;
 
 	/* parses through the command line arguments */
 	for(i = 1; i < argv; i++) {
@@ -15,8 +16,10 @@ int main(int argv, char *argc[]) {
 		if(*argc[i] == '-') {
 			if(!strcmp(argc[i], "-h"))
 				usage();
-			if(!strcmp(argc[i], "-c"))
+			else if(!strcmp(argc[i], "-c"))
 				gContextLines = atoi(argc[++i]);
+			else if(!strcmp(argc[i], "-m"))
+				gMaxLines = atoi(argc[++i]);
 		}
 
 		/* if an argument doesn't start with "-" then it's one of the two
