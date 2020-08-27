@@ -49,14 +49,6 @@ bool compareLines(FILE *file1, FILE *file2, size_t *lines,
         i = 0;
 	j = 0;
 
-        if(*limbo != NULL) {
-                *context = addToList(*limbo, *context);
-
-                *limbo = NULL;
-
-                return false;
-        }
-
         for(;;) {
                 newStr1 = (char *)malloc(512);
                 newStr2 = (char *)malloc(512);
@@ -73,6 +65,11 @@ bool compareLines(FILE *file1, FILE *file2, size_t *lines,
                 /* Compares lines */
                 if(strcmp(newStr1, newStr2)) {
                         comparison = true;
+        		if(*limbo != NULL) {
+		        	*context = addToList(*limbo, *context);
+
+		        	*limbo = NULL;
+        		}
 
                         gUnmatchingLines++;
 			j++;
@@ -81,14 +78,29 @@ bool compareLines(FILE *file1, FILE *file2, size_t *lines,
                         *diff2 = addToList(newStr2, *diff2);
                 }
                 else {
+			if(*limbo != NULL) {
+				free(*limbo);
+
+				*limbo = NULL;
+			}
+
                         if(gContextLines != 0 && !comparison) {
                                 *context = addToContextList(newStr1, *context);
+
+				free(newStr2);
                         }
                         else if(gContextLines != 0 && comparison) {
                                 *limbo = (char *)malloc(strlen(newStr1));
 
                                 strcpy(*limbo, newStr1);
+
+				free(newStr1);
+				free(newStr2);
                         }
+			else {
+				free(newStr1);
+				free(newStr2);
+			}
 
                         break;
                 }

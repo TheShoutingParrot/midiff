@@ -32,8 +32,8 @@ struct list *addToContextList(char *str, struct list *listHead) {
         if(lenList(listHead) >= gContextLines) {
                 listEntry = listHead->next;
 
-                free(listHead);
                 free(listHead->str);
+                free(listHead);
 
                 listHead = listEntry;
         }
