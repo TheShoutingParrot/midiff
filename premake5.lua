@@ -17,4 +17,4 @@ project "midiff"
                 symbols "On"
 	
 	filter "configurations:Release"
-		optimize "Size"
+		optimize "Speed"

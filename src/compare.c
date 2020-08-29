@@ -50,8 +50,8 @@ bool compareLines(FILE *file1, FILE *file2, size_t *lines,
 	j = 0;
 
         for(;;) {
-                newStr1 = (char *)malloc(512);
-                newStr2 = (char *)malloc(512);
+                newStr1 = (char *)calloc(256, sizeof(char));
+                newStr2 = (char *)calloc(256, sizeof(char));
 
                 /* Checks if the line contained an EOF (end of file) */
                 gIsLastLine = getNextString(file1, newStr1) || getNextString(file2, newStr2);
@@ -90,7 +90,7 @@ bool compareLines(FILE *file1, FILE *file2, size_t *lines,
 				free(newStr2);
                         }
                         else if(gContextLines != 0 && comparison) {
-                                *limbo = (char *)malloc(strlen(newStr1));
+                                *limbo = (char *)calloc(256, sizeof(char));
 
                                 strcpy(*limbo, newStr1);
 
