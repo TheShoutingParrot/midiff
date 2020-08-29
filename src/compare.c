@@ -39,8 +39,6 @@ bool compareLines(FILE *file1, FILE *file2, size_t *lines,
                 char **limbo) {
         size_t i, j;
         bool comparison;
-        char *newStr1,
-             *newStr2;
 
         comparison = false;
 
@@ -50,8 +48,8 @@ bool compareLines(FILE *file1, FILE *file2, size_t *lines,
 	j = 0;
 
         for(;;) {
-                newStr1 = (char *)calloc(256, sizeof(char));
-                newStr2 = (char *)calloc(256, sizeof(char));
+                char *newStr1 = (char *)calloc(256, sizeof(char));
+                char *newStr2 = (char *)calloc(256, sizeof(char));
 
                 /* Checks if the line contained an EOF (end of file) */
                 gIsLastLine = getNextString(file1, newStr1) || getNextString(file2, newStr2);

@@ -38,27 +38,7 @@ struct list *addToContextList(char *str, struct list *listHead) {
                 listHead = listEntry;
         }
 
-        if(listHead == NULL) {
-                listHead = (struct list *)malloc(sizeof(*listHead));
-
-                listEntry = listHead;
-        }
-
-        else {
-                listEntry = listHead;
-
-                while(listEntry->next != NULL) {
-                        listEntry = listEntry->next;
-                }
-
-                listEntry->next = (struct list *)malloc(sizeof(*listHead));
-                listEntry = listEntry->next;
-        }
-
-        listEntry->str = str;
-        listEntry->next = NULL;
-
-        return listHead;
+        return addToList(str, listHead);
 }
 
 size_t lenList(struct list *listEntry) {
@@ -84,7 +64,7 @@ void printList(struct list *listHead) {
         i = 0;
 
         while(listEntry != NULL) {
-                printf("listEntry %02lX: address: %p str: %p %s\n", i, 
+                printf("listEntry %p str: %p %s\n",
 				listEntry, listEntry->str, listEntry->str);
                 listEntry = listEntry->next;
                 i++;
